@@ -5,11 +5,11 @@ from flask import render_template
 @app.route('/index')
 @app.route('/home')
 def index():
-    return render_template('index.html',login=False)
+    return render_template('index.html')
 
-@app.route('/course_offerings')
-def course_offerings():
-    return render_template('course_offerings.html')             
+@app.route('/courses')
+def courses():
+    return render_template('courses.html')
 
 @app.route('/register')
 def register():           
