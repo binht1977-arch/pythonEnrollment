@@ -3,10 +3,16 @@
 # branch origin/2_4-Create-Nav-Links commit test
 # branch second commit test
 
+
 __pycache__/
-*.*
-*.py[codz]
-*$py.class
+*.pyc
+*.pyo
+*.pyd
+
+#__pycache__/
+#*.*
+#*.py[codz]
+#*$py.class
 
 # C extensions
 *.so
