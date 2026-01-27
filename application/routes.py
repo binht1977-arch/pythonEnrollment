@@ -27,11 +27,11 @@ def courses(term="Spring 2019"):  #example test http://127.0.0.1:5000/courses/Fa
 def register():           
     return render_template('register.html', register=True)     
 
-@app.route('/enrollment')
+@app.route('/enrollment', methods=['get', 'post'])
 def enrollment():      
-    id = request.args.get('courseID')
-    title = request.args.get('title')
-    term = request.args.get('term')
+    id = request.form.get('courseID')
+    title = request.form['title'] # same as get method above
+    term = request.form.get('term')
 
     return render_template('enrollment.html', enrollment=True, data={'courseID': id, 'title': title, 'term': term})          
 
