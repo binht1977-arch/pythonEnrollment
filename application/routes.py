@@ -1,5 +1,5 @@
 from application import app 
-from flask import render_template
+from flask import render_template, url_for
 from flask import request, json, Response, redirect, flash
 from application import db
 from application.models import User, Course, Enrollment
@@ -13,13 +13,17 @@ courseData = [{"courseID":"1111","title":"PHP 101","description":"Intro to PHP",
 def index():
     return render_template('index.html',index=True)
 
+
 @app.route('/login', methods=['get', 'post'])
 def login():           
     form = LoginForm()
     if form.validate_on_submit():
-        if request.form.get("email") == "le_duc_quan@hotmail.com":
-            flash("You have successfully logged in!", "success")
-            # flash("You have successfully logged in2!")
+        email = form.email.data
+        password = form.password.data
+
+        user = User.objects(email=email).first()
+        if user and user.get_password(password): # get_password method to check hashed password, will fail if password wasn't hashed originally
+            flash(f"{user.first_name}, you have successfully logged in!", "success")
             return redirect('/index')
         else:   
             flash("Something went wrong. Please try again.", "danger")
@@ -32,9 +36,30 @@ def courses(term="Spring 2019"):  #example test http://127.0.0.1:5000/courses/Fa
     return render_template('courses.html', courseData=courseData, courses=True, term=term)
 
 
-@app.route('/register')
-def register():           
-    return render_template('register.html', register=True)     
+@app.route('/register', methods=['get', 'post'])
+def register():
+    form = RegisterForm()
+    if form.validate_on_submit():
+        user_id = User.objects.count() + 1  # simple way to generate user_id
+
+        email = form.email.data
+        password = form.password.data
+        first_name = form.first_name.data
+        last_name = form.last_name.data
+
+        user = User(user_id=user_id, email=email, first_name=first_name, last_name=last_name)
+        print(password)
+        user.set_password(password)  # hash the password before saving
+        print(password)
+        user.save()
+
+        flash(f"{user.first_name}, you have successfully registered!", "success")
+        return redirect(url_for('index'))
+
+    return render_template('register.html', title="Register", form=form, register=True)     
+
+
+
 
 @app.route('/enrollment', methods=['get', 'post'])
 def enrollment():      
@@ -86,6 +111,20 @@ def add_test_users():
      users = User.objects(user_id = 100)
      return render_template('user.html', users=users)    
 
+
+@app.route('/delete_user')
+def delete_user():
+    # Delete user by email address
+    email = "le_duc_quan@hotmail.com"
+    user = User.objects(email=email).first()
+    
+    if user:
+        user.delete()
+        flash(f"User with email {email} has been deleted.", "success")
+        return redirect(url_for('user'))
+    else:
+        flash(f"User with email {email} not found.", "danger")
+        return redirect(url_for('user'))
 
 
 
