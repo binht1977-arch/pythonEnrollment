@@ -9,7 +9,6 @@ class User(db.Document):
     email       = db.StringField(max_length=30)
     password    = db.StringField(max_length=30)
 
-
 class Course(db.Document):
     course_id   =   db.StringField( max_length=10, unique=True )
     title       =   db.StringField( max_length=100 )
@@ -20,3 +19,9 @@ class Course(db.Document):
 class Enrollment(db.Document):
     user_id     =   db.IntField()
     course_id   =   db.StringField( max_length=10 )
+
+
+
+
+
+
