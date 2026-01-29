@@ -20,9 +20,9 @@ class RegisterForm(FlaskForm):
 
     def validate_email(self,email):
         user = User.objects(email=email.data).first()  # query mongoengine for existing email
-        user_all = User.objects(email=email.data).all()
-        print('User: ',user,'/n')
-        print('user_all: ',user, '/n')
+        #user_all = User.objects(email=email.data).all()
+        #print('User: ',user,'/n')
+        #print('user_all: ',user, '/n')
         if user:
             raise ValidationError("Email is already in use, pick another one.")
         
