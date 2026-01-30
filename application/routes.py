@@ -32,8 +32,17 @@ def login():
 
 @app.route('/courses/')
 @app.route("/courses/<term>")
-def courses(term="Spring 2019"):  #example test http://127.0.0.1:5000/courses/Fall%202020
-    return render_template('courses.html', courseData=courseData, courses=True, term=term)
+def courses(term= None):  #example test http://127.0.0.1:5000/courses/Fall%202020
+    if term is None:
+        term = "Spring 2019"
+    
+    classes = Course.objects().order_by('+courseID')  # + for ascending, - for descending
+
+    print(classes)
+    return render_template('courses.html', courseData=classes, courses=True, term=term)
+
+
+
 
 
 @app.route('/register', methods=['get', 'post'])
@@ -55,19 +64,72 @@ def register():
 
         flash(f"{user.first_name}, you have successfully registered!", "success")
         return redirect(url_for('index'))
-
     return render_template('register.html', title="Register", form=form, register=True)     
-
-
 
 
 @app.route('/enrollment', methods=['get', 'post'])
 def enrollment():      
-    id = request.form.get('courseID')
-    title = request.form['title'] # same as get method above
-    term = request.form.get('term')
+    courseID    = request.form.get('courseID')
+    courseTitle = request.form.get('title')  # same as get method above
+    user_id     = 1  # hardcoded for testing, replace with current logged in user id
 
-    return render_template('enrollment.html', enrollment=True, data={'courseID': id, 'title': title, 'term': term})          
+    if courseID:
+        # use the model field name `courseID`
+        if Enrollment.objects(user_id=user_id, courseID=courseID):
+            flash(f"Oops, you are already enrolled in this course {courseTitle}.", "danger")
+            return redirect(url_for('courses'))
+        else:
+            Enrollment(user_id=user_id, courseID=courseID)
+            flash(f"You have been enrolled in {courseTitle}!", "success")
+            return redirect(url_for('courses'))
+
+    classes = list( User.objects.aggregate(*[
+                {
+                    '$lookup': {
+                        'from': 'enrollment', 
+                        'localField': 'user_id', 
+                        'foreignField': 'user_id', 
+                        'as': 'r1'
+                    }
+                }, {
+                    '$unwind': {
+                        'path': '$r1', 
+                        'includeArrayIndex': 'r1_id', 
+                        'preserveNullAndEmptyArrays': False
+                    }
+                }, {
+                    '$lookup': {
+                        'from': 'course', 
+                        'localField': 'r1.courseID', 
+                        'foreignField': 'courseID', 
+                        'as': 'r2'
+                    }
+                }, {
+                    '$unwind': {
+                        'path': '$r2', 
+                        'preserveNullAndEmptyArrays': False
+                    }
+                }, {
+                    '$match': {
+                        'user_id': user_id
+                    }
+                }, {
+                    '$sort': {
+                        'courseID': 1
+                    }
+                }
+            ]))
+
+    #term = request.form.get('term')
+
+    return render_template('enrollment.html', enrollment=True, title="Enrollment", classes=classes)
+
+
+
+
+
+
+
 
 @app.route('/api/')       #http://127.0.0.1:5000/api          -- test example
 @app.route('/api/<idx>')  #http://127.0.0.1:5000/api/0        -- test example
