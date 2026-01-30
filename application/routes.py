@@ -1,6 +1,6 @@
 from application import app 
 from flask import render_template, url_for
-from flask import request, json, Response, redirect, flash
+from flask import request, json, Response, redirect, flash, session
 from application import db
 from application.models import User, Course, Enrollment
 from application.forms import LoginForm, RegisterForm
@@ -15,7 +15,11 @@ def index():
 
 
 @app.route('/login', methods=['get', 'post'])
-def login():           
+def login():
+    print("-LEQUAN DEBUG- Login route accessed::", session.get('username'))
+    if session.get('username'):
+        return redirect(url_for('index'))
+
     form = LoginForm()
     if form.validate_on_submit():
         email = form.email.data
@@ -24,6 +28,10 @@ def login():
         user = User.objects(email=email).first()
         if user and user.get_password(password): # get_password method to check hashed password, will fail if password wasn't hashed originally
             flash(f"{user.first_name}, you have successfully logged in!", "success")
+            session['user_id'] = user.user_id  # store user_id in session
+            session['username'] = user.first_name
+
+
             return redirect('/index')
         else:   
             flash("Something went wrong. Please try again.", "danger")
@@ -42,11 +50,11 @@ def courses(term= None):  #example test http://127.0.0.1:5000/courses/Fall%20202
     return render_template('courses.html', courseData=classes, courses=True, term=term)
 
 
-
-
-
 @app.route('/register', methods=['get', 'post'])
 def register():
+    if session.get('username'):
+        return redirect(url_for('index'))
+    
     form = RegisterForm()
     if form.validate_on_submit():
         user_id = User.objects.count() + 1  # simple way to generate user_id
@@ -68,10 +76,14 @@ def register():
 
 
 @app.route('/enrollment', methods=['get', 'post'])
-def enrollment():      
+def enrollment():    
+    # if user is not logged in, redirect to login page
+    if not session.get('username'): 
+        return redirect(url_for('login'))
+
     courseID    = request.form.get('courseID')
     courseTitle = request.form.get('title')  # same as get method above
-    user_id     = 1  # hardcoded for testing, replace with current logged in user id
+    user_id     = session.get('user_id')  # get user_id from session
 
     if courseID:
         # use the model field name `courseID`
@@ -79,7 +91,8 @@ def enrollment():
             flash(f"Oops, you are already enrolled in this course {courseTitle}.", "danger")
             return redirect(url_for('courses'))
         else:
-            Enrollment(user_id=user_id, courseID=courseID)
+            Enrollment(user_id=user_id, courseID=courseID).save()
+            print("-LEQUAN DEBUG-",Enrollment.user_id, Enrollment.courseID )
             flash(f"You have been enrolled in {courseTitle}!", "success")
             return redirect(url_for('courses'))
 
@@ -143,8 +156,11 @@ def api(idx=None):
 
 
 @app.route('/logout')
-def logout():           
-    return render_template('logout.html')           
+def logout():
+    # clear username and user_id from session on logout
+    session['username'] = None
+    session.pop('user_id', None)
+    return redirect(url_for('index'))           
 
 
 @app.route('/user') 
