@@ -1,11 +1,30 @@
-from application import app 
+from application import app, api 
 from flask import render_template, url_for
-from flask import request, json, Response, redirect, flash, session
+from flask import request, json, Response, redirect, flash, session, jsonify
 from application import db
 from application.models import User, Course, Enrollment
 from application.forms import LoginForm, RegisterForm
+#from flask_restplus import Resource  #--> deprecated use the following: pip install flask-restx
+from flask_restx import Resource 
 
 courseData = [{"courseID":"1111","title":"PHP 101","description":"Intro to PHP","credits":3,"term":"Fall, Spring"}, {"courseID":"2222","title":"Java 1","description":"Intro to Java Programming","credits":4,"term":"Spring"}, {"courseID":"3333","title":"Adv PHP 201","description":"Advanced PHP Programming","credits":3,"term":"Fall"}, {"courseID":"4444","title":"Angular 1","description":"Intro to Angular","credits":3,"term":"Fall, Spring"}, {"courseID":"5555","title":"Java 2","description":"Advanced Java Programming","credits":4,"term":"Fall"}]
+
+################################
+@api.route('/api','/api/')
+class GetAndPost(Resource):
+    def get(self):
+        return jsonify(json.loads(User.objects.all().to_json()))
+
+
+@api.route('/api/<idx>')
+class GetUpdateDelete(Resource):
+    def get(self, idx):
+        return jsonify(json.loads(User.objects(user_id=idx).to_json()))
+
+
+#################################
+
+
 
 @app.route('/')
 @app.route('/index')
